@@ -1,0 +1,68 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # add /app to path
+
+import random
+from decimal import Decimal
+from werkzeug.security import generate_password_hash
+from app import create_app, db
+from app.models import User, Permission, UserPermission, Store, Product
+
+def ean13_like(n):
+    return str(n).zfill(13)
+
+def seed():
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+
+        perm_names = [
+            '*',
+            'view_users', 'view_permissions', 'grant_permissions',
+            'view_stock', 'edit_stock', 'approve_orders',
+            'view_products', 'make_orders',
+            'view_reports'
+        ]
+        for name in perm_names:
+            if not Permission.query.filter_by(name=name).first():
+                db.session.add(Permission(name=name, description=f'Permission: {name}'))
+        db.session.commit()
+
+        if not User.query.filter_by(username='root').first():
+            root = User(username='root', password_hash=generate_password_hash('rootpass'))
+            db.session.add(root)
+            db.session.commit()
+            star = Permission.query.filter_by(name='*').first()
+            db.session.add(UserPermission(user_id=root.user_id, permission_id=star.permission_id))
+            db.session.commit()
+
+        store = Store.query.filter_by(name='Main Store').first()
+        if not store:
+            store = Store(name='Main Store', address='123 Example St', contact='01234 567890')
+            db.session.add(store)
+            db.session.commit()
+
+        base_price = Decimal('9.99')
+        for i in range(1, 101):
+            sku = ean13_like(100000000000 + i)
+            name = f"Shampoo {i}"
+            brand = f"Brand {((i-1)%10)+1}"
+            if not Product.query.filter_by(sku=sku).first():
+                p = Product(
+                    name=name,
+                    sku=sku,
+                    barcode=ean13_like(200000000000 + i),
+                    outer_barcode=ean13_like(300000000000 + i) if i % 3 == 0 else None,
+                    brand=brand,
+                    description="Test product for seeding",
+                    price=base_price,
+                    stock=100,
+                    low_stock_threshold=10,
+                    store_id=None
+                )
+                db.session.add(p)
+        db.session.commit()
+
+        print("Seeding complete. Created root user (root/rootpass) and 100 products.")
+
+if __name__ == '__main__':
+    seed()

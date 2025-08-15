@@ -1,0 +1,8 @@
+flask==3.0.3
+flask_sqlalchemy==3.1.1
+psycopg2-binary==2.9.9
+python-dotenv==1.0.1
+flask-migrate==4.0.7
+werkzeug==3.0.3
+passlib==1.7.4
+Flask-Session==0.8.0
