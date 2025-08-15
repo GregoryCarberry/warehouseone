@@ -1,9 +1,12 @@
 from flask import Blueprint, jsonify, request
 from ..models import Product
+# Import the require_permission decorator to enforce access control on this route.
+from ..permissions import require_permission
 
 bp = Blueprint('products', __name__)
 
 @bp.route('/', methods=['GET'])
+@require_permission('view_products')
 def list_products():
     q = (request.args.get('q') or "").strip()
     limit = min(int(request.args.get('limit', 20)), 100)
