@@ -33,7 +33,11 @@ class Product(db.Model):
     __tablename__ = 'products'
     product_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    sku = db.Column(db.String(13), unique=True, nullable=False)
+    # Use 8-character numeric strings for SKUs (EAN‑8 like).  This field was
+    # previously 13 characters wide but has been reduced to 8 to reflect the
+    # intended EAN‑8 format.  Changing the length here will generate a new
+    # Alembic migration the next time the container starts.
+    sku = db.Column(db.String(8), unique=True, nullable=False)
     barcode = db.Column(db.String(13), unique=True, nullable=True)
     outer_barcode = db.Column(db.String(13), unique=True, nullable=True)
     brand = db.Column(db.String(120), nullable=True)

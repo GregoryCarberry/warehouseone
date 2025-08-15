@@ -1,4 +1,4 @@
-# WarehouseOne Backend (Flask + Postgres) — v2
+# WarehouseOne Backend (Flask + Postgres) — v3
 
 Robust scaffold with:
 - Flask 3, SQLAlchemy, Flask-Migrate (Alembic), Postgres 16
@@ -7,6 +7,7 @@ Robust scaffold with:
 - Permissions (many-to-many with validity)
 - Products API (`GET /products` with `q`, `limit`, `offset`)
 - Seed script (root user + 100 products)
+  \* SKUs use 8‑digit numeric strings (EAN‑8 like) rather than 13‑digit codes
 - Docker Compose
 
 ## Quick Start

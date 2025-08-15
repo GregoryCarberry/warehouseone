@@ -7,8 +7,20 @@ from werkzeug.security import generate_password_hash
 from app import create_app, db
 from app.models import User, Permission, UserPermission, Store, Product
 
-def ean13_like(n):
+def ean13_like(n: int) -> str:
+    """Return a 13‑digit zero‑padded string for barcode-like values."""
     return str(n).zfill(13)
+
+
+def ean8_like(n: int) -> str:
+    """Return an 8‑digit zero‑padded string for SKU values.
+
+    EAN‑8 codes consist of eight numeric digits.  We generate simple
+    sequential values by zero‑padding the provided integer up to eight
+    digits.  When seeding, we start from a large base number to avoid
+    leading zeros (e.g. 10000000 + i).
+    """
+    return str(n).zfill(8)
 
 def seed():
     app = create_app()
@@ -42,15 +54,21 @@ def seed():
             db.session.commit()
 
         base_price = Decimal('9.99')
+        # Seed 100 products.  SKUs use an 8‑digit numeric string (EAN‑8 like).
+        # We start from 10000000 + i to avoid leading zeros and ensure fixed length.
         for i in range(1, 101):
-            sku = ean13_like(100000000000 + i)
+            sku = ean8_like(10000000 + i)
             name = f"Shampoo {i}"
-            brand = f"Brand {((i-1)%10)+1}"
+            brand = f"Brand {((i - 1) % 10) + 1}"
+            # Only create the product if it does not already exist with this SKU
             if not Product.query.filter_by(sku=sku).first():
                 p = Product(
                     name=name,
                     sku=sku,
+                    # The primary barcode remains EAN‑13 like for product labels.
                     barcode=ean13_like(200000000000 + i),
+                    # Outer barcodes are optional and remain 13 digits.  Only every
+                    # third product receives an outer barcode to demonstrate nulls.
                     outer_barcode=ean13_like(300000000000 + i) if i % 3 == 0 else None,
                     brand=brand,
                     description="Test product for seeding",
