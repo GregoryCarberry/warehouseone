@@ -6,3 +6,4 @@ flask-migrate==4.0.7
 werkzeug==3.0.3
 passlib==1.7.4
 Flask-Session==0.8.0
+Flask-Cors>=4.0.0

@@ -9,3 +9,7 @@ class Config:
     SESSION_PERMANENT = os.environ.get('SESSION_PERMANENT', 'false').lower() == 'true'
     SESSION_FILE_DIR = os.environ.get('SESSION_FILE_DIR', None)
     SESSION_USE_SIGNER = True
+
+    SESSION_COOKIE_SAMESITE = "Lax"   # or "None" if you ever serve from different domains with HTTPS
+    SESSION_COOKIE_SECURE = False     # True in production behind HTTPS
+

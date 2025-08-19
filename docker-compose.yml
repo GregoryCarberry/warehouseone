@@ -25,7 +25,6 @@ services:
       SESSION_PERMANENT: "false"
     volumes:
       - ./backend:/app
-      - ./manage.sh:/app/manage.sh
     ports:
       - "5000:5000"
     depends_on:
