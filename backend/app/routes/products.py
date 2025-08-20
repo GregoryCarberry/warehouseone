@@ -17,8 +17,14 @@ def list_products():
         like = f"%{q}%"
         query = query.filter(Product.name.ilike(like))
 
+    # NEW: sorting
+    sort = (request.args.get('sort') or 'name').lower()
+    order = (request.args.get('order') or 'asc').lower()
+    col = Product.name if sort == 'name' else Product.product_id
+    query = query.order_by(col.asc() if order != 'desc' else col.desc())
+
     total = query.count()
-    items = query.order_by(Product.product_id).limit(limit).offset(offset).all()
+    items = query.limit(limit).offset(offset).all()
 
     def to_dict(p: Product):
         return {

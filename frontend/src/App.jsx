@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import AdminUsers from './pages/AdminUsers.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { useAuth } from './context/AuthContext.jsx'
+import Products from './pages/Products.jsx'
 
 
 export default function App() {
@@ -41,6 +42,14 @@ element={
 <AdminUsers />
 </ProtectedRoute>
 }
+/>
+<Route
+  path="/products"
+  element={
+    <ProtectedRoute requiredPermission="view_products">
+      <Products />
+    </ProtectedRoute>
+  }
 />
 <Route path="*" element={<Navigate to="/" />} />
 </Routes>
