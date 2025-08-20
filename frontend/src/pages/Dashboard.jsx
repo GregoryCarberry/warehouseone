@@ -23,7 +23,7 @@ return (
 {has('grant_permissions') && (
 <li><Link className="underline" to="/admin/users">Admin → Users</Link></li>
 )}
-<li><a className="underline" href="#" onClick={(e) => e.preventDefault()}>Products (coming soon)</a></li>
+<li><Link className="underline" to="/products">Products</Link></li>
 </ul>
 </section>
 </div>
