@@ -5,6 +5,7 @@ import AdminUsers from './pages/AdminUsers.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Products from './pages/Products.jsx'
+import ProductDetail from './pages/ProductDetail.jsx'
 
 
 export default function App() {
@@ -58,3 +59,12 @@ element={
 </div>
 )
 }
+
+<Route
+  path="/products/:id"
+  element={
+    <ProtectedRoute requiredPermission="view_products">
+      <ProductDetail />
+    </ProtectedRoute>
+  }
+/>
