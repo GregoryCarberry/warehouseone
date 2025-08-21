@@ -71,6 +71,9 @@ export default function Products() {
                     <td className="p-2">{p.sku}</td>
                     <td className="p-2">{p.barcode}</td>
                     <td className="p-2">{p.name}</td>
+                    <td className="p-2">
+                        <a className="underline" href={`/products/${p.product_id}`}>{p.name}</a>
+                    </td>
                     <td className="p-2 text-right">{p.stock}</td>
                   </tr>
                 ))}

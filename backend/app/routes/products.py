@@ -40,3 +40,43 @@ def list_products():
         }
 
     return jsonify({"total": total, "items": [to_dict(p) for p in items]})
+
+@bp.route('/<int:pid>', methods=['GET'])
+@require_permission('view_products')
+def get_product(pid):
+    p = Product.query.get_or_404(pid)
+    return jsonify(p.to_dict())
+
+@bp.route('/<int:pid>', methods=['PUT'])
+@require_permission('edit_stock')
+def update_product(pid):
+    p = Product.query.get_or_404(pid)
+    data = request.get_json(silent=True) or {}
+    # validate
+    def is_digits(s, n): return isinstance(s, str) and s.isdigit() and len(s) == n
+    stock = data.get('stock', p.stock)
+    low = data.get('low_stock_threshold', p.low_stock_threshold)
+    sku = data.get('sku', p.sku)
+    barcode = data.get('barcode', p.barcode)
+    outer = data.get('outer_barcode', p.outer_barcode)
+
+    if not is_digits(sku, 8): return jsonify({'error':'sku must be 8 digits'}), 400
+    if barcode is not None and barcode != '' and not is_digits(str(barcode), 13):
+        return jsonify({'error':'barcode must be 13 digits or null'}), 400
+    if outer is not None and outer != '' and not is_digits(str(outer), 13):
+        return jsonify({'error':'outer_barcode must be 13 digits or null'}), 400
+    try:
+        stock = int(stock); low = int(low)
+        if stock < 0 or low < 0: raise ValueError()
+    except Exception:
+        return jsonify({'error':'stock and low_stock_threshold must be integers ≥ 0'}), 400
+
+    # apply
+    p.stock = stock
+    p.low_stock_threshold = low
+    p.sku = sku
+    p.barcode = barcode or None
+    p.outer_barcode = outer or None
+
+    db.session.commit()
+    return jsonify({'ok': True, 'product': p.to_dict()})
