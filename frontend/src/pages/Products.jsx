@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+const DEBOUNCE_MS = 250
 
 async function api(path) {
   const res = await fetch(`${API}${path}`, { credentials: 'include' })
@@ -11,31 +12,33 @@ async function api(path) {
 }
 
 export default function Products() {
-  const { user } = useAuth()
   const [q, setQ] = useState('')
   const [page, setPage] = useState(0)
   const [data, setData] = useState({ total: 0, items: [] })
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
-
   const limit = 10
+  const timerRef = useRef()
+
   useEffect(() => {
-    (async () => {
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(async () => {
       try {
         setLoading(true)
         const params = new URLSearchParams({
-          q, limit: String(limit), offset: String(page * limit), sort: 'name', order: 'asc'
+          q, limit: String(limit), offset: String(page * limit),
+          sort: 'name', order: 'asc'
         })
         const out = await api(`/products/?${params}`)
-        setData(out)
-        setErr('')
+        setData(out); setErr('')
       } catch (e) {
         setErr(e.message)
       } finally {
         setLoading(false)
       }
-    })()
-  }, [q, page])
+    }, DEBOUNCE_MS)
+    return () => clearTimeout(timerRef.current)
+  }, [q, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const maxPage = Math.max(0, Math.ceil(data.total / limit) - 1)
 
@@ -45,7 +48,7 @@ export default function Products() {
       <div className="flex gap-2 mb-3">
         <input
           className="border rounded px-3 py-2 flex-1"
-          placeholder="Search by name…"
+          placeholder="Search by name, SKU (8), or barcode (13)…"
           value={q}
           onChange={(e) => { setPage(0); setQ(e.target.value) }}
         />
@@ -69,10 +72,9 @@ export default function Products() {
                 {data.items.map(p => (
                   <tr key={p.product_id} className="border-b last:border-0">
                     <td className="p-2">{p.sku}</td>
-                    <td className="p-2">{p.barcode}</td>
-                    <td className="p-2">{p.name}</td>
+                    <td className="p-2">{p.barcode || '—'}</td>
                     <td className="p-2">
-                        <a className="underline" href={`/products/${p.product_id}`}>{p.name}</a>
+                      <Link className="underline" to={`/products/${p.product_id}`}>{p.name}</Link>
                     </td>
                     <td className="p-2 text-right">{p.stock}</td>
                   </tr>
@@ -84,10 +86,10 @@ export default function Products() {
             <div>{data.total} items</div>
             <div className="flex items-center gap-2">
               <button className="px-3 py-1 border rounded disabled:opacity-50"
-                onClick={() => setPage(p => Math.max(0, p-1))} disabled={page===0}>Prev</button>
-              <span>Page {page+1} / {maxPage+1}</span>
+                onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>Prev</button>
+              <span>Page {page + 1} / {maxPage + 1}</span>
               <button className="px-3 py-1 border rounded disabled:opacity-50"
-                onClick={() => setPage(p => Math.min(maxPage, p+1))} disabled={page>=maxPage}>Next</button>
+                onClick={() => setPage(p => Math.min(maxPage, p + 1))} disabled={page >= maxPage}>Next</button>
             </div>
           </div>
         </>
