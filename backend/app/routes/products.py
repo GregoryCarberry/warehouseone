@@ -63,35 +63,63 @@ def get_product(pid):
 @bp.route('/<int:pid>', methods=['PUT'])
 @require_permission('edit_stock')
 def update_product(pid):
+    """
+    Updates limited product fields. Guarded by 'edit_stock'.
+    Accepts JSON with any of: stock, low_stock_threshold, sku, barcode, outer_barcode.
+    Rules:
+      - sku: exactly 8 digits
+      - barcode/outer_barcode: 13 digits or null/empty
+      - stock, low_stock_threshold: integers ≥ 0
+    Returns: { ok: true, product: {...}, changed: bool }
+    """
     p = Product.query.get_or_404(pid)
     data = request.get_json(silent=True) or {}
 
-    def is_digits(s, n): return isinstance(s, str) and s.isdigit() and len(s) == n
+    # helpers
+    def is_digits(s, n):
+        return isinstance(s, str) and s.isdigit() and len(s) == n
 
-    stock = data.get('stock', p.stock)
-    low = data.get('low_stock_threshold', p.low_stock_threshold)
-    sku = data.get('sku', p.sku)
-    barcode = data.get('barcode', p.barcode)
-    outer = data.get('outer_barcode', p.outer_barcode)
+    # Current values are defaults if not provided
+    next_stock = data.get('stock', p.stock)
+    next_low   = data.get('low_stock_threshold', p.low_stock_threshold)
+    next_sku   = data.get('sku', p.sku)
+    next_bar   = data.get('barcode', p.barcode)
+    next_outer = data.get('outer_barcode', p.outer_barcode)
 
-    if not is_digits(sku, 8):
-        return jsonify({'error': 'sku must be 8 digits'}), 400
-    if barcode not in (None, "") and not is_digits(str(barcode), 13):
+    # Normalise empty strings for barcodes to None
+    if isinstance(next_bar, str) and next_bar.strip() == "":
+        next_bar = None
+    if isinstance(next_outer, str) and next_outer.strip() == "":
+        next_outer = None
+
+    # Validate identifiers
+    if not is_digits(next_sku, 8):
+        return jsonify({'error': 'sku must be exactly 8 digits'}), 400
+    if next_bar is not None and not is_digits(str(next_bar), 13):
         return jsonify({'error': 'barcode must be 13 digits or null'}), 400
-    if outer not in (None, "") and not is_digits(str(outer), 13):
+    if next_outer is not None and not is_digits(str(next_outer), 13):
         return jsonify({'error': 'outer_barcode must be 13 digits or null'}), 400
+
+    # Validate numerics
     try:
-        stock = int(stock); low = int(low)
-        if stock < 0 or low < 0:
-            raise ValueError()
+        next_stock = int(next_stock)
+        next_low   = int(next_low)
+        if next_stock < 0 or next_low < 0:
+            raise ValueError("negative")
     except Exception:
         return jsonify({'error': 'stock and low_stock_threshold must be integers ≥ 0'}), 400
 
-    p.stock = stock
-    p.low_stock_threshold = low
-    p.sku = sku
-    p.barcode = barcode or None
-    p.outer_barcode = outer or None
+    # No-op detection
+    if (next_stock == p.stock and next_low == p.low_stock_threshold and
+        next_sku == p.sku and next_bar == p.barcode and next_outer == p.outer_barcode):
+        return jsonify({'ok': True, 'product': to_dict(p), 'changed': False})
+
+    # Apply & persist
+    p.stock = next_stock
+    p.low_stock_threshold = next_low
+    p.sku = next_sku
+    p.barcode = next_bar
+    p.outer_barcode = next_outer
 
     db.session.commit()
-    return jsonify({'ok': True, 'product': to_dict(p)})
+    return jsonify({'ok': True, 'product': to_dict(p), 'changed': True})
